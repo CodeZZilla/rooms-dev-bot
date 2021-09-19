@@ -22,7 +22,7 @@ bot.onText(/\/start/, (msg) => {
             if (user) {
                 processReturnedUser(msgInfo);
             } else {
-                // registerUser(msgInfo, password);
+                registerUser(msgInfo );
                 bot.sendMessage(msgInfo.chat, `Привіт, ${msgInfo.name} ${msgInfo.last_name}!\nЦе 🤖 компанії РУМС!\nТут ти зможеш:
                         \n▫️обрати необхідні тобі фільтри для персональних підбірок
                         \n▫️тримати зв'зок із персональним помічником
@@ -82,7 +82,7 @@ function getUserByTelegramID(msg) {
             console.log(users)
             return users[0]
         }
-    }).then(user => {
+    })/*.then(user => {
         if (user && user.days_of_subscription <= 0) {
             api.request({url: "subscriptions", method: "GET", filters: {"_sort": "price:ASC"}}).then(plans => {
                 if (plans) {
@@ -99,7 +99,7 @@ function getUserByTelegramID(msg) {
         } else {
             return user;
         }
-    })
+    })*/
 }
 function processReturnedUser(msgInfo) {
     bot.sendMessage(msgInfo.chat, `Привіт, ${msgInfo.name} ${msgInfo.last_name}!\nЗ поверненням!`, {
@@ -110,7 +110,7 @@ function processReturnedUser(msgInfo) {
                     text: 'Збережені ❤️',
                     callback_data: 'liked'
                 }],
-                [{text: 'Налаштування 🎚', callback_data: 'settings'}, {
+                [{text: 'Налаштування ⚙', callback_data: 'settings'}, {
                     text: 'Придбати персональний підбір 🧞‍♂️',
                     callback_data: 'settings'
                 }]
@@ -119,11 +119,18 @@ function processReturnedUser(msgInfo) {
     })
 }
 
+async function registerUser(msgInfo) {
+    let apiw = new api(msgInfo);
+    await apiw.save().then(res => {
+        console.log("Успішно зареєстровано!")
+    });
+}
+
 function sendGreetingMessage(msgInfo) {
     setTimeout(() => {
         bot.sendMessage(msgInfo.chat, `Тобі надано 2 дні тестової підписки ;)`).then(() => {
             bot.sendMessage(msgInfo.chat, `Ти з нами вперше - тому пропонуємо одразу обрати собі фільтри!`)
-        }).then(() => {
+        })/*.then(() => {
             api.request({
                 "url": "cities", "method": "GET"
             }).then(cities => {
@@ -131,7 +138,7 @@ function sendGreetingMessage(msgInfo) {
                     return {text: city.name, callback_data: "set_city_first:" + city.id}
                 }), 3))
             })
-        })
+        })*/
     }, 5000)
 }
 
