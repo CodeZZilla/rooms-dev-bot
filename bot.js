@@ -4,6 +4,7 @@ const ADMIN_CHAT = -1001589426879;
 const passgen = require('passgen');
 const bot = new TelegramBot(token_tg, {polling: true});
 const MANAGER_CHAT = -1001339183887;
+const cities = require("./api/cities-api")
 
 require('./test-connection-db');
 
@@ -125,12 +126,11 @@ function processReturnedUser(msgInfo) {
 
 //function processRegisterUser()
 async function registerUser(msgInfo) {
-    let api = new api(msgInfo)
-    await api.save().then(res => {
+    let apiU = new api(msgInfo)
+    await apiU.save().then(res => {
         console.log("Успішно зареєстровано!")
     });
 }
-
 
 function sendGreetingMessage(msgInfo) {
     setTimeout(() => {
@@ -138,18 +138,11 @@ function sendGreetingMessage(msgInfo) {
             bot.sendMessage(msgInfo.chat, `Ти з нами вперше - тому з чим тобі допомогти?`)
             //processRegisterUser(msgInfo);
         }).then(() => {
-            bot.sendMessage(msgInfo.chat, "Обери своє місто!", {
-                parse_mode: "Markdown",
-                reply_markup: JSON.stringify({
-                    resize_keyboard: true,
-                    inline_keyboard: [
-                        [
-                            {text: 'Львів🌝', callback_data: 'AAA'},
-                            {text: 'Київ🔥', callback_data: 'BBB'},
-                            {text: 'Харків🌪', callback_data: 'BBB'}
-                        ]
-                    ]
-                })
+            cities.find().then(cities =>{
+                console.log(cities)
+                bot.sendMessage(msgInfo.chat,"Обери місто!",createKeyboardOpts(cities.map(city =>{
+                    return {text: city.name, callback_data: "set_city_first:" + city.id}
+                }),3))
             })
             //     api.request({
             //         "url": "cities", "method": "GET"
@@ -161,7 +154,6 @@ function sendGreetingMessage(msgInfo) {
         })
     }, 1000)
 }
-
 
 function createKeyboardOpts(list, elementsPerSubArray, args) {
     let list1 = listToMatrix(list, elementsPerSubArray);
@@ -190,3 +182,54 @@ function listToMatrix(list, elementsPerSubArray) {
 
     return matrix;
 }
+
+function typeOfApartments(reply,chat,msg){
+    if(reply.includes("first")){
+
+
+    }
+}
+
+function setCityForUser(answer, chat, msg) {
+    if (answer.includes("first")) {
+        api.request({
+            "url": "regions", "method": "GET", "filters": {"city.id": answer.split(":")[1]}
+        }).then(regions => {
+            var keyboard = createKeyboardOpts(regions.map(region => {
+                return {
+                    text: region.name,
+                    callback_data: "rg_first:" + region.id
+                }
+            }), 1, [{text: "Зберегти райони 💾", callback_data: "save_regions_first"}]);
+            if (regions.length > 0) {
+                bot.sendMessage(chat, "Обери свій район! (Можна декілька)", keyboard)
+            } else {
+                sendMainMenu(msg)
+            }
+        })
+    }
+}
+
+bot.on('callback_query', (msg) => {
+    console.log(msg)
+    let chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
+    let msgInfo = getMainDataFromMsg(msg);
+    let reply = msg.data;
+    switch (reply){
+        default:
+            if(reply.includes("set_sity")){
+                getUserByTelegramID(msg).then(user => {
+                    return api.request({
+                        "url": "users",
+                        "method": "PUT",
+                        "id": user.id,
+                        body: {preferences: {city: answer.split(":")[1]}}
+                    })
+                })
+            }
+
+
+    }
+
+
+})
