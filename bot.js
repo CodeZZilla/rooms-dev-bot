@@ -2,6 +2,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const token_tg = "1953524348:AAGnDAeg5c1dLkAqWiQmy-cTPRwpyWAJlN4";
 const passgen = require('passgen');
 const bot = new TelegramBot(token_tg, {polling: true});
+const MANAGER_CHAT = -1001339183887;
 
 require('./test-connection-db');
 
@@ -17,18 +18,18 @@ bot.onText(/\/start/, (msg) => {
     try {
         let msgInfo = getMainDataFromMsg(msg);
         let key = msg.text.replace("/start", '').trim();
-        // let password = generatePassword();
+        let password = passgen.create(20);
         console.log(msgInfo)
 
         getUserByTelegramID(msg).then(user => {
             if (user) {
                 processReturnedUser(msgInfo);
             } else {
-                registerUser(msgInfo );
+                registerUser(msgInfo);
                 bot.sendMessage(msgInfo.chat, `Привіт, ${msgInfo.name} ${msgInfo.last_name}!\nЦе 🤖 компанії РУМС!\nТут ти зможеш:
 
                         \n▫️обрати необхідні тобі фільтри для персональних підбірок
-                        \n▫️тримати зв'зок із персональним помічником
+                        \n▫️тримати зв'язок із персональним помічником
                         \n▫️отримувати сповіщення про появу нових об'єктів за твоїми фільтрами ;)
                         \n▫️пожалітися нам у підтримку, або попросити перевірити власника житла, або квартиру.
                         \nНадішліть Ваш номер, щоб ми могли вас верифікувати, будь ласка.
@@ -37,8 +38,8 @@ bot.onText(/\/start/, (msg) => {
                         return bot.sendMessage(msgInfo.chat, `Ми пропонуємо почитати що таке РУМС, та чим ми займаємося у [оглядовій статті](https://teletype.in/@rooms_ua/NGUnJgEUi)`, {parse_mode: "Markdown"})
                     }
                 )
-                 sendGreetingMessage(msgInfo);
-                 // bot.sendMessage(MANAGER_CHAT, `Зареєстрований новий користувач "${msgInfo.name + " " + msgInfo.last_name}" з ID"${msgInfo.chat}"`);
+                sendGreetingMessage(msgInfo);
+                //bot.sendMessage(MANAGER_CHAT, `Зареєстрований новий користувач "${msgInfo.name + " " + msgInfo.last_name}" з ID"${msgInfo.chat}"`);
             }
             // if (key.includes("chat")) {
             //     let msgInfo = getMainDataFromMsg(msg);
@@ -67,8 +68,8 @@ bot.onText(/\/start/, (msg) => {
             //         body: {subscription: "5f44102d479cca001db181d7", days_of_subscription: 99999}
             //     })
             // }
-         })
-    }catch(e){
+        })
+    } catch (e) {
         console.log(e);
     }
 
@@ -105,17 +106,18 @@ function getUserByTelegramID(msg) {
         }
     })*/
 }
+
 function processReturnedUser(msgInfo) {
     bot.sendMessage(msgInfo.chat, `Привіт, ${msgInfo.name} ${msgInfo.last_name}!\nЗ поверненням!`, {
         reply_markup: JSON.stringify({
             resize_keyboard: true,
             keyboard: [
                 [{text: 'Свіжі квартири 🏢', callback_data: 'getFreshApartments'}, {
-                    text: 'Збережені ❤️',
+                    text: 'Збережені ❤',
                     callback_data: 'liked'
                 }],
                 [{text: 'Налаштування ⚙', callback_data: 'settings'}, {
-                    text: 'Придбати персональний підбір 🧞‍♂️',
+                    text: 'Придбати персональний підбір 🧞‍♂',
                     callback_data: 'settings'
                 }]
             ]
@@ -123,30 +125,44 @@ function processReturnedUser(msgInfo) {
     })
 }
 
+//function processRegisterUser()
 async function registerUser(msgInfo) {
-    let apiw = new api(msgInfo);
-    await apiw.save().then(res => {
+    let api = new api(msgInfo)
+    await api.save().then(res => {
         console.log("Успішно зареєстровано!")
     });
 }
 
+
 function sendGreetingMessage(msgInfo) {
     setTimeout(() => {
         bot.sendMessage(msgInfo.chat, `Тобі надано 2 дні тестової підписки ;)`).then(() => {
-            bot.sendMessage(msgInfo.chat, `Ти з нами вперше - тому пропонуємо одразу обрати собі фільтри!`)
-        })/*.then(() => {
-            api.request({
-                "url": "cities", "method": "GET"
-            }).then(cities => {
-                bot.sendMessage(msgInfo.chat, "Обери своє місто!", createKeyboardOpts(cities.map(city => {
-                    return {text: city.name, callback_data: "set_city_first:" + city.id}
-                }), 3))
+            bot.sendMessage(msgInfo.chat, `Ти з нами вперше - тому з чим тобі допомогти?`)
+            //processRegisterUser(msgInfo);
+        }).then(() => {
+            bot.sendMessage(msgInfo.chat, "Обери своє місто!", {
+                parse_mode: "Markdown",
+                reply_markup: JSON.stringify({
+                    resize_keyboard: true,
+                    inline_keyboard: [
+                        [
+                            {text: 'Львів🌝', callback_data: 'AAA'},
+                            {text: 'Київ🔥', callback_data: 'BBB'},
+                            {text: 'Харків🌪', callback_data: 'BBB'}
+                        ]
+                    ]
+                })
             })
-        })*/
-    }, 5000)
+            //     api.request({
+            //         "url": "cities", "method": "GET"
+            //     }).then(cities => {
+            //         bot.sendMessage(msgInfo.chat, "Обери своє місто!", createKeyboardOpts(cities.map(city => {
+            //             return {text: city.name, callback_data: "set_city_first:" + city.id}
+            //         }), 3))
+            //     })
+        })
+    }, 1000)
 }
-
-
 
 
 function createKeyboardOpts(list, elementsPerSubArray, args) {
